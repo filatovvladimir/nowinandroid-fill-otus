@@ -32,4 +32,10 @@ dependencies {
 
     androidTestImplementation(libs.bundles.androidx.compose.ui.test)
     androidTestImplementation(projects.core.testing)
+    // Allure
+    androidTestImplementation("io.qameta.allure:allure-kotlin-model:2.4.0")
+    androidTestImplementation("io.qameta.allure:allure-kotlin-commons:2.4.0")
+    androidTestImplementation("io.qameta.allure:allure-kotlin-junit4:2.4.0")
+    androidTestImplementation("io.qameta.allure:allure-kotlin-android:2.4.0")
+    androidTestUtil("androidx.test:orchestrator:1.5.1")
 }

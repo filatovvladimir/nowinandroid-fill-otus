@@ -24,6 +24,7 @@ import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
 import com.google.samples.apps.nowinandroid.core.testing.data.followableTopicTestData
 import com.google.samples.apps.nowinandroid.feature.interests.InterestsScreen
 import com.google.samples.apps.nowinandroid.feature.interests.InterestsUiState
@@ -32,12 +33,18 @@ import org.junit.Rule
 import org.junit.Test
 import com.google.samples.apps.nowinandroid.core.ui.R as CoreUiR
 import com.google.samples.apps.nowinandroid.feature.interests.R as InterestsR
+import io.qameta.allure.android.runners.AllureAndroidJUnit4
+import io.qameta.allure.kotlin.Allure
+import io.qameta.allure.kotlin.Description
+import org.junit.runner.RunWith
+import kotlin.test.assertEquals
 
 /**
  * UI test for checking the correct behaviour of the Interests screen;
  * Verifies that, when a specific UiState is set, the corresponding
  * composables and details are shown
  */
+@RunWith(AllureAndroidJUnit4::class)
 class InterestsScreenTest {
 
     @get:Rule
@@ -107,6 +114,46 @@ class InterestsScreenTest {
             .onNodeWithText(interestsEmptyHeader)
             .assertIsDisplayed()
     }
+
+    @Test
+    @Description("При нажатии кнопки подписки должен вызываться колбэк с правильными параметрами")
+    fun interests_whenFollowButtonClicked_callsFollowTopicWithCorrectParams() {
+        val capturedCalls = mutableListOf<Pair<String, Boolean>>()
+        val testTopic = followableTopicTestData.first { !it.isFollowed }
+
+        Allure.step("Arrange: Инициализация экрана интересов") {
+            composeTestRule.setContent {
+                InterestsScreen(
+                    uiState = InterestsUiState.Interests(
+                        topics = listOf(testTopic),
+                        selectedTopicId = null
+                    ),
+                    followTopic = { topicId, isFollowed ->
+                        capturedCalls.add(topicId to isFollowed)
+                    },
+                    onTopicClick = {}
+                )
+            }
+        }
+
+        Allure.step("Act: Клик на кнопку подписки") {
+            composeTestRule.waitForIdle()
+
+            composeTestRule
+                .onNodeWithContentDescription(interestsTopicCardFollowButton)
+                .assertExists()
+                .assertIsDisplayed()
+                .performClick()
+        }
+
+        Allure.step("Assert: Проверка вызова колбэка") {
+            assertEquals(1, capturedCalls.size)
+            assertEquals(testTopic.topic.id, capturedCalls[0].first)
+            assertEquals(true, capturedCalls[0].second)
+        }
+    }
+
+
 
     @Composable
     private fun InterestsScreen(uiState: InterestsUiState) {

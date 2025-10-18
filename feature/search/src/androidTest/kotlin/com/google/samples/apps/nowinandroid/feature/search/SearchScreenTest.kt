@@ -39,10 +39,15 @@ import com.google.samples.apps.nowinandroid.core.ui.R.string
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
+import io.qameta.allure.android.runners.AllureAndroidJUnit4
+import io.qameta.allure.kotlin.Allure
+import io.qameta.allure.kotlin.Description
+import org.junit.runner.RunWith
 
 /**
  * UI test for checking the correct behaviour of the Search screen.
  */
+@RunWith(AllureAndroidJUnit4::class)
 class SearchScreenTest {
 
     @get:Rule
@@ -220,5 +225,86 @@ class SearchScreenTest {
         composeTestRule
             .onNodeWithText(searchNotReadyString)
             .assertIsDisplayed()
+    }
+
+    @Test
+    @Description("При ошибке загрузки поиска интерфейс не должен падать")
+    fun search_whenLoadFailed_uiDoesNotCrash() {
+        Allure.step("Arrange: Настройка состояния ошибки загрузки") {
+            composeTestRule.setContent {
+                SearchScreen(
+                    searchResultUiState = SearchResultUiState.LoadFailed
+                )
+            }
+        }
+
+        Allure.step("Assert: Проверка что поисковое поле доступно и приложение не упало") {
+            composeTestRule
+                .onNodeWithTag("searchTextField")
+                .assertExists()
+                .assertIsDisplayed()
+        }
+    }
+
+    @Test
+    @Description("Кнопка очистки истории не должна отображаться при пустой истории")
+    fun search_whenNoRecentSearches_clearButtonNotVisible() {
+        Allure.step("Arrange: Настройка экрана с пустой историей поиска") {
+            composeTestRule.setContent {
+                SearchScreen(
+                    searchResultUiState = SearchResultUiState.EmptyQuery,
+                    recentSearchesUiState = RecentSearchQueriesUiState.Success(
+                        recentQueries = emptyList()
+                    )
+                )
+            }
+        }
+
+        Allure.step("Assert: Проверка отсутствия кнопки очистки истории") {
+            composeTestRule
+                .onNodeWithContentDescription(clearRecentSearchesContentDesc)
+                .assertDoesNotExist()
+        }
+
+        Allure.step("Assert: Проверка что заголовок 'Recent Searches' все равно отображается") {
+            composeTestRule
+                .onNodeWithText("Recent searches")
+                .assertIsDisplayed()
+        }
+    }
+
+    @Test
+    @Description("Слишком короткий поисковый запрос должен приводить к состоянию EmptyQuery")
+    fun search_whenQueryTooShort_showsEmptyQueryState() {
+        val recentSearches = listOf("kotlin", "android")
+
+        Allure.step("Arrange: Настройка экрана с коротким запросом") {
+            composeTestRule.setContent {
+                SearchScreen(
+                    searchQuery = "a", // Меньше минимальной длины 2
+                    searchResultUiState = SearchResultUiState.EmptyQuery,
+                    recentSearchesUiState = RecentSearchQueriesUiState.Success(
+                        recentQueries = recentSearches.map(::RecentSearchQuery)
+                    )
+                )
+            }
+        }
+
+        Allure.step("Assert: Проверка что отображается история поиска, а не результаты") {
+            // Проверяем что видна история поиска (признак EmptyQuery состояния)
+            composeTestRule
+                .onNodeWithText("kotlin")
+                .assertIsDisplayed()
+
+            // Проверяем что НЕ виден заголовок "Updates" (который показывается при успешном поиске)
+            composeTestRule
+                .onNodeWithText(updatesString)
+                .assertDoesNotExist()
+
+            // Проверяем что НЕ виден заголовок "Topics" (который показывается при успешном поиске)
+            composeTestRule
+                .onNodeWithText(topicsString)
+                .assertDoesNotExist()
+        }
     }
 }
