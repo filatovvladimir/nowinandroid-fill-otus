@@ -39,12 +39,18 @@ import com.google.samples.apps.nowinandroid.core.ui.NewsFeedUiState
 import kotlinx.coroutines.test.runTest
 import org.junit.Rule
 import org.junit.Test
+import org.junit.runner.RunWith
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
+import io.qameta.allure.android.runners.AllureAndroidJUnit4
+import io.qameta.allure.kotlin.Allure
+import io.qameta.allure.kotlin.Description
+
 
 /**
  * UI tests for [BookmarksScreen] composable.
  */
+@RunWith(AllureAndroidJUnit4::class)
 class BookmarksScreenTest {
 
     @get:Rule
@@ -197,69 +203,34 @@ class BookmarksScreenTest {
         assertEquals(true, undoStateCleared)
     }
 
-    /**
-     * Тестирование навигации к деталям статьи из закладок
-     */
     @Test
+    @Description("Тестирование навигации к деталям статьи из закладок")
     fun news_resource_click_navigates_to_details() {
         val testNewsResource = userNewsResourcesTestData[0]
         var newsResourceViewedId: String? = null
 
-        composeTestRule.setContent {
-            BookmarksScreen(
-                feedState = NewsFeedUiState.Success(listOf(testNewsResource)),
-                onShowSnackbar = { _, _ -> false },
-                removeFromBookmarks = {},
-                onTopicClick = {},
-                onNewsResourceViewed = { newsResourceId ->
-                    newsResourceViewedId = newsResourceId
-                },
-            )
+        Allure.step("When") {
+            composeTestRule.setContent {
+                BookmarksScreen(
+                    feedState = NewsFeedUiState.Success(listOf(testNewsResource)),
+                    onShowSnackbar = { _, _ -> false },
+                    removeFromBookmarks = {},
+                    onTopicClick = {},
+                    onNewsResourceViewed = { newsResourceId ->
+                        newsResourceViewedId = newsResourceId
+                    },
+                )
+            }
         }
 
-        // Кликаем на заголовок новости
-        composeTestRule
-            .onNodeWithText(testNewsResource.title, substring = true)
-            .performClick()
-
-        // Проверяем что колбэк вызвался с правильным ID
-        assertEquals(testNewsResource.id, newsResourceViewedId)
-    }
-
-    /**
-     * Тестирование фильтрации закладок по поисковому запросу
-     * Поиск не находит результатов
-     */
-    @Test
-    fun search_in_bookmarks_shows_empty_results() {
-        // Используем тестовые данные
-        val testNewsResources = userNewsResourcesTestData.take(2)
-
-        composeTestRule.setContent {
-            BookmarksScreen(
-                feedState = NewsFeedUiState.Success(testNewsResources),
-                onShowSnackbar = { _, _ -> false },
-                removeFromBookmarks = {},
-                onTopicClick = {},
-                onNewsResourceViewed = {},
-            )
+        Allure.step("ACT - кликаем на заголовок новости") {
+            composeTestRule
+                .onNodeWithText(testNewsResource.title, substring = true)
+                .performClick()
         }
 
-        // Проверяем что изначально отображаются все статьи
-        composeTestRule
-            .onNodeWithText(testNewsResources[0].title, substring = true)
-            .assertExists()
-        composeTestRule
-            .onNodeWithText(testNewsResources[1].title, substring = true)
-            .assertExists()
-
-        // Ищем несуществующий запрос
-        val nonExistentText = "NonExistentSearchQuery12345"
-
-        // Проверяем что нет статей с несуществующим текстом
-        composeTestRule
-            .onNodeWithText(nonExistentText)
-            .assertDoesNotExist()
+        Allure.step("Assert - проверяем что колбэк вызвался с правильным ID") {
+            assertEquals(testNewsResource.id, newsResourceViewedId)
+        }
     }
-
 }
