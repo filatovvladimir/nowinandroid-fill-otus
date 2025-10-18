@@ -204,33 +204,29 @@ class BookmarksScreenTest {
     }
 
     @Test
-    @Description("Тестирование навигации к деталям статьи из закладок")
-    fun news_resource_click_navigates_to_details() {
-        val testNewsResource = userNewsResourcesTestData[0]
-        var newsResourceViewedId: String? = null
-
-        Allure.step("When") {
+    @Description("При клике на карточку новости в закладках должен вызываться колбэк просмотра с правильным ID")
+    fun feed_whenBookmarkNewsCardClicked_callsNewsResourceViewed() {
+        var viewedNewsResourceId: String? = null
+        val testNewsResource = userNewsResourcesTestData.first()
+        Allure.step("Arrange: Инициализация экрана закладок с тестовыми данными") {
             composeTestRule.setContent {
                 BookmarksScreen(
                     feedState = NewsFeedUiState.Success(listOf(testNewsResource)),
                     onShowSnackbar = { _, _ -> false },
                     removeFromBookmarks = {},
                     onTopicClick = {},
-                    onNewsResourceViewed = { newsResourceId ->
-                        newsResourceViewedId = newsResourceId
-                    },
+                    onNewsResourceViewed = { viewedNewsResourceId = it },
                 )
             }
         }
-
-        Allure.step("ACT - кликаем на заголовок новости") {
+        Allure.step("Act: Клик на карточку новости в закладках") {
             composeTestRule
                 .onNodeWithText(testNewsResource.title, substring = true)
                 .performClick()
         }
-
-        Allure.step("Assert - проверяем что колбэк вызвался с правильным ID") {
-            assertEquals(testNewsResource.id, newsResourceViewedId)
+        Allure.step("Assert: Проверка вызова колбэка просмотра новости с правильным ID") {
+            assertEquals(testNewsResource.id, viewedNewsResourceId)
         }
     }
+
 }
