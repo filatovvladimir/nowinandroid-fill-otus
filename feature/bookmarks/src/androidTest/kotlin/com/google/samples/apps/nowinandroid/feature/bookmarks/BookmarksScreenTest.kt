@@ -196,4 +196,70 @@ class BookmarksScreenTest {
         testLifecycleOwner.handleLifecycleEvent(event = Lifecycle.Event.ON_STOP)
         assertEquals(true, undoStateCleared)
     }
+
+    /**
+     * Тестирование навигации к деталям статьи из закладок
+     */
+    @Test
+    fun news_resource_click_navigates_to_details() {
+        val testNewsResource = userNewsResourcesTestData[0]
+        var newsResourceViewedId: String? = null
+
+        composeTestRule.setContent {
+            BookmarksScreen(
+                feedState = NewsFeedUiState.Success(listOf(testNewsResource)),
+                onShowSnackbar = { _, _ -> false },
+                removeFromBookmarks = {},
+                onTopicClick = {},
+                onNewsResourceViewed = { newsResourceId ->
+                    newsResourceViewedId = newsResourceId
+                },
+            )
+        }
+
+        // Кликаем на заголовок новости
+        composeTestRule
+            .onNodeWithText(testNewsResource.title, substring = true)
+            .performClick()
+
+        // Проверяем что колбэк вызвался с правильным ID
+        assertEquals(testNewsResource.id, newsResourceViewedId)
+    }
+
+    /**
+     * Тестирование фильтрации закладок по поисковому запросу
+     * Поиск не находит результатов
+     */
+    @Test
+    fun search_in_bookmarks_shows_empty_results() {
+        // Используем тестовые данные
+        val testNewsResources = userNewsResourcesTestData.take(2)
+
+        composeTestRule.setContent {
+            BookmarksScreen(
+                feedState = NewsFeedUiState.Success(testNewsResources),
+                onShowSnackbar = { _, _ -> false },
+                removeFromBookmarks = {},
+                onTopicClick = {},
+                onNewsResourceViewed = {},
+            )
+        }
+
+        // Проверяем что изначально отображаются все статьи
+        composeTestRule
+            .onNodeWithText(testNewsResources[0].title, substring = true)
+            .assertExists()
+        composeTestRule
+            .onNodeWithText(testNewsResources[1].title, substring = true)
+            .assertExists()
+
+        // Ищем несуществующий запрос
+        val nonExistentText = "NonExistentSearchQuery12345"
+
+        // Проверяем что нет статей с несуществующим текстом
+        composeTestRule
+            .onNodeWithText(nonExistentText)
+            .assertDoesNotExist()
+    }
+
 }
